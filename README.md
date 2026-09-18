@@ -32,6 +32,41 @@ continuum timeline
 
 The first run does not require an API key or spend money.
 
+## Local model reflection with llama.cpp
+
+The local provider uses llama.cpp's OpenAI-compatible HTTP server and refuses
+non-loopback URLs. It needs no API key. On an 8 GB Intel Mac, use a 2,048-token
+context and the Q4_0 model (not BF16):
+
+```bash
+brew install llama.cpp
+llama-server \
+  -hf ggml-org/Qwen3.5-0.8B-GGUF:Q4_0 \
+  --host 127.0.0.1 --port 8080 --ctx-size 2048 \
+  --threads 2 --parallel 1
+```
+
+In another terminal:
+
+```bash
+source .venv/bin/activate
+export CONTINUUM_PROVIDER=local
+export CONTINUUM_LOCAL_URL=http://127.0.0.1:8080/v1
+export CONTINUUM_LOCAL_MODEL=ggml-org/Qwen3.5-0.8B-GGUF:Q4_0
+export CONTINUUM_LOCAL_TIMEOUT=300
+export CONTINUUM_LOCAL_MAX_TOKENS=256
+continuum reflect
+```
+
+The same provider and settings can be selected for one command:
+
+```bash
+continuum reflect --provider local \
+  --local-url http://127.0.0.1:8080/v1 \
+  --local-model ggml-org/Qwen3.5-0.8B-GGUF:Q4_0 \
+  --timeout 300 --max-tokens 256
+```
+
 ## Optional model-assisted reflection
 
 Install the optional OpenAI SDK and set two environment variables:
@@ -55,6 +90,7 @@ developer quickstart.
 - `continuum remember TEXT` adds an autobiographical event.
 - `continuum status` shows current state and self-model.
 - `continuum reflect` asks the configured model to reflect on recent state.
+- `continuum reflect --provider local` uses a loopback llama.cpp server.
 - `continuum reflect --offline` creates a deterministic reflection without an API.
 - `continuum timeline` shows recent events and reflections.
 - `continuum export` writes a human-readable JSON snapshot.
@@ -73,4 +109,3 @@ change its own governing instructions. Later experiments will compare:
 3. the model connected to this persistent core.
 
 See [CHARTER.md](CHARTER.md) for the hypothesis, measurements, and stop rules.
-

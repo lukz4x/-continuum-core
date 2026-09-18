@@ -37,6 +37,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     reflect = sub.add_parser("reflect", help="Create and store a reflection")
     reflect.add_argument("--offline", action="store_true")
+    reflect.add_argument("--provider", choices=("openai", "local"))
+    reflect.add_argument("--local-url")
+    reflect.add_argument("--local-model")
+    reflect.add_argument("--timeout", type=float)
+    reflect.add_argument("--max-tokens", type=int)
 
     timeline = sub.add_parser("timeline", help="Show recent events and reflections")
     timeline.add_argument("--limit", type=int, default=20)
@@ -76,8 +81,16 @@ def main() -> None:
             content = offline_reflection(store)
             mode, model = "offline", None
         else:
-            content, model = model_reflection(store)
-            mode = "model"
+            content, model = model_reflection(
+                store,
+                provider=args.provider,
+                local_url=args.local_url,
+                local_model=args.local_model,
+                timeout=args.timeout,
+                max_tokens=args.max_tokens,
+            )
+            provider = args.provider or os.environ.get("CONTINUUM_PROVIDER") or "openai"
+            mode = "local" if provider == "local" else "model"
         reflection_id = store.add_reflection(content, mode=mode, model_name=model)
         print(f"Reflection {reflection_id}\n\n{content}")
     elif args.command == "timeline":
@@ -98,4 +111,3 @@ def main() -> None:
 
 if __name__ == "__main__":
     main()
-
